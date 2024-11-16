@@ -2,3 +2,4 @@ python-dotenv
 instructor
 pydantic
 groq
+google-generativeai
