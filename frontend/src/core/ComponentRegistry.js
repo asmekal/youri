@@ -1,10 +1,29 @@
 import * as Babel from '@babel/standalone';
 import React, { useState, useEffect } from 'react';
 import {
-    Grid, Paper, IconButton, Typography, Box,
-    Fab, TextField, CircularProgress, Snackbar, Grow,
-    List, ListItem, ListItemText, ListItemIcon, Badge, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Button,
-    Card, CardContent,
+    Grid,
+    Paper,
+    IconButton,
+    Typography,
+    Box,
+    Fab,
+    TextField,
+    CircularProgress,
+    Snackbar,
+    Grow,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemIcon,
+    Badge,
+    Divider,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    Card,
+    CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MailIcon from '@mui/icons-material/Mail';
@@ -19,6 +38,13 @@ class ComponentRegistry {
             ComponentRegistry.instance = new ComponentRegistry();
         }
         return ComponentRegistry.instance;
+    }
+
+    clearComponent(componentId) {
+        if (this.components.has(componentId)) {
+            this.components.delete(componentId);
+            console.log(`Component ${componentId} cache cleared.`);
+        }
     }
 
     async loadComponent(componentId) {
@@ -36,22 +62,34 @@ class ComponentRegistry {
             // Create a safe context with allowed dependencies
             const dependencies = {
                 React,
-                Grid,
-                Paper,
-                IconButton,
-                Typography,
-                Box,
-                Fab,
-                TextField,
-                CircularProgress,
-                Snackbar,
-                Grow,
-                List, ListItem, ListItemText, ListItemIcon, Badge, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Button,
-                Card, CardContent,
-                AddIcon, MailIcon,
+                Grid: require('@mui/material/Grid').default,
+                Paper: require('@mui/material/Paper').default,
+                IconButton: require('@mui/material/IconButton').default,
+                Typography: require('@mui/material/Typography').default,
+                Box: require('@mui/material/Box').default,
+                Fab: require('@mui/material/Fab').default,
+                TextField: require('@mui/material/TextField').default,
+                CircularProgress: require('@mui/material/CircularProgress').default,
+                Snackbar: require('@mui/material/Snackbar').default,
+                Grow: require('@mui/material/Grow').default,
+                List: require('@mui/material/List').default,
+                ListItem: require('@mui/material/ListItem').default,
+                ListItemText: require('@mui/material/ListItemText').default,
+                ListItemIcon: require('@mui/material/ListItemIcon').default,
+                Badge: require('@mui/material/Badge').default,
+                Divider: require('@mui/material/Divider').default,
+                Dialog: require('@mui/material/Dialog').default,
+                DialogTitle: require('@mui/material/DialogTitle').default,
+                DialogContent: require('@mui/material/DialogContent').default,
+                DialogActions: require('@mui/material/DialogActions').default,
+                Button: require('@mui/material/Button').default,
+                Card: require('@mui/material/Card').default,
+                CardContent: require('@mui/material/CardContent').default,
+                AddIcon: require('@mui/icons-material/Add').default,
+                MailIcon: require('@mui/icons-material/Mail').default,
             };
 
-            // Transform the code
+            // Transform the code using Babel
             const transpiledCode = Babel.transform(code, {
                 presets: ['env', 'react'],
                 filename: `component-${componentId}.js`,
@@ -60,7 +98,6 @@ class ComponentRegistry {
             // Create module context
             const moduleExports = {};
             const moduleRequire = (name) => {
-                if (name === 'react') return React;
                 if (dependencies[name]) return dependencies[name];
                 throw new Error(`Cannot require module: ${name}`);
             };

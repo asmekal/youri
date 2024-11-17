@@ -1,3 +1,5 @@
+// frontend/src/components/FloatingActionButton.js
+
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import ActionButton from './ActionButton';
@@ -10,28 +12,18 @@ const FloatingActionButton = ({ editingComponentId }) => {
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(''); // Initialize error state
+    const [currentEditingComponentId, setCurrentEditingComponentId] = useState(editingComponentId);
 
     useEffect(() => {
-        if (editingComponentId) {
-            // Fetch existing component data to pre-fill the input
-            const fetchComponentData = async () => {
-                try {
-                    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
-                    const response = await axios.get(`${backendUrl}/get_component/${editingComponentId}`);
-                    const { intent, files: existingFiles } = response.data;
+        const handleEditComponent = (event) => {
+            const { component_id } = event.detail;
+            setCurrentEditingComponentId(component_id);
+            setOpen(true);
+        };
 
-                    setInput(intent || '');
-                    setFiles(existingFiles || []);
-                    setOpen(true);
-                } catch (error) {
-                    console.error('Error fetching component data:', error);
-                    setError('Failed to load component data for editing');
-                }
-            };
-
-            fetchComponentData();
-        }
-    }, [editingComponentId]);
+        window.addEventListener('editComponent', handleEditComponent);
+        return () => window.removeEventListener('editComponent', handleEditComponent);
+    }, []);
 
     const handleSubmit = async () => {
         if (!input && files.length === 0) {
@@ -42,32 +34,25 @@ const FloatingActionButton = ({ editingComponentId }) => {
         setLoading(true);
         try {
             const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
-            const fileContents = await Promise.all(
-                files.map(async (file) => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () =>
-                            resolve({
-                                filename: file.name,
-                                content: reader.result.split(',')[1],
-                            });
-                        reader.onerror = reject;
-                        reader.readAsDataURL(file);
-                    });
-                })
-            );
+            const formData = new FormData();
 
-            const payload = {
-                intent: input || undefined,
-                files: fileContents,
-                context: {},
-            };
-
-            let response;
-            if (editingComponentId) {
-                payload["componentId"] = editingComponentId
+            if (currentEditingComponentId) {
+                formData.append('component_id', currentEditingComponentId);
             }
-            response = await axios.post(`${backendUrl}/generate_component`, payload);
+
+            if (input) {
+                formData.append('intent', input);
+            }
+
+            files.forEach((file) => {
+                formData.append('files', file);
+            });
+
+            const response = await axios.post(`${backendUrl}/generate_component`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
 
             const { component_id, code } = response.data;
             localStorage.setItem(component_id, code);
@@ -75,19 +60,42 @@ const FloatingActionButton = ({ editingComponentId }) => {
             setInput('');
             setFiles([]);
             setOpen(false);
+            setCurrentEditingComponentId(null);
 
             // Dispatch event to notify component addition or update
-            window.dispatchEvent(
-                new CustomEvent('componentAdded', {
-                    detail: { component_id, code },
-                })
-            );
+            if (editingComponentId) {
+                window.dispatchEvent(
+                    new CustomEvent('componentUpdated', {
+                        detail: { component_id, code },
+                    })
+                );
+            } else {
+                window.dispatchEvent(
+                    new CustomEvent('componentAdded', {
+                        detail: { component_id, code },
+                    })
+                );
+            }
 
             // Reset error after successful submission
             setError('');
         } catch (error) {
             console.error('Error sending request:', error);
-            setError(error.response?.data?.detail || 'Failed to generate component');
+            // Handle different error structures
+            if (error.response && error.response.data && error.response.data.detail) {
+                const detail = error.response.data.detail;
+                if (Array.isArray(detail)) {
+                    // Join all error messages into a single string
+                    const errorMessage = detail.map(err => err.msg).join(', ');
+                    setError(errorMessage);
+                } else if (typeof detail === 'string') {
+                    setError(detail);
+                } else {
+                    setError('Failed to generate component');
+                }
+            } else {
+                setError('Failed to generate component');
+            }
         } finally {
             setLoading(false);
         }
@@ -107,6 +115,7 @@ const FloatingActionButton = ({ editingComponentId }) => {
             setInput('');
             setFiles([]);
             setError('');
+            setCurrentEditingComponentId(null);
         }
     };
 
@@ -130,9 +139,9 @@ const FloatingActionButton = ({ editingComponentId }) => {
                 loading={loading}
                 handleSubmit={handleSubmit}
                 handleKeyPress={handleKeyPress}
-                error={error}          // Pass the error state
+                error={error}          // Pass the error state as string
                 setError={setError}
-                editingComponentId={editingComponentId}
+                editingComponentId={currentEditingComponentId}
             />
             <ActionButton open={open} onToggle={toggleOpen} />
         </Box>

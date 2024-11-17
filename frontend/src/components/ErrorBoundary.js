@@ -1,3 +1,5 @@
+// frontend/src/components/ErrorBoundary.js
+
 import React from 'react';
 import { Typography, Box } from '@mui/material';
 
@@ -23,6 +25,9 @@ class ErrorBoundary extends React.Component {
                 <Box sx={{ padding: '20px', textAlign: 'center' }}>
                     <Typography variant="h5" color="error">
                         Something went wrong while loading the component.
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+                        Please try refreshing the page or contact support if the issue persists.
                     </Typography>
                 </Box>
             );

@@ -6,3 +6,4 @@ fastapi
 uvicorn
 google-generativeai
 openai
+python-multipart

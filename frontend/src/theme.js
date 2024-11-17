@@ -3,16 +3,16 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
     palette: {
-        mode: 'dark', // Use dark mode for a modern look
+        mode: 'dark', // Keeping dark mode
         primary: {
-            main: '#1a237e', // Darker blue
+            main: '#3f51b5', // Updated to a slightly lighter blue
         },
         secondary: {
-            main: '#c62828', // Darker red
+            main: '#f50057', // Updated to a brighter red
         },
         background: {
-            default: '#121212',
-            paper: '#1e1e1e',
+            default: '#1e1e1e', // Lighter than '#121212'
+            paper: '#2c2c2c',   // Lighter than '#1e1e1e'
         },
         text: {
             primary: '#ffffff',
@@ -42,14 +42,14 @@ const theme = createTheme({
         MuiAppBar: {
             styleOverrides: {
                 colorPrimary: {
-                    backgroundColor: '#1a237e', // Match primary.main
+                    backgroundColor: '#3f51b5', // Match updated primary.main
                 },
             },
         },
         MuiPaper: {
             styleOverrides: {
                 root: {
-                    backgroundColor: '#1e1e1e',
+                    backgroundColor: '#2c2c2c', // Match updated background.paper
                 },
             },
         },

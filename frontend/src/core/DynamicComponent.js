@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { Paper, CircularProgress, Box } from '@mui/material';
+import { CircularProgress, Box, Typography } from '@mui/material';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { componentRegistry } from './ComponentRegistry';
 
@@ -14,47 +14,54 @@ const DynamicComponent = ({ componentId, ...props }) => {
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const loadComponent = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const component = await componentRegistry.loadComponent(componentId);
+
+            if (typeof component === 'function') {
+                setLoadedComponent(() => component);
+            } else {
+                throw new Error('Invalid component loaded');
+            }
+        } catch (err) {
+            console.error(`Error loading component ${componentId}:`, err);
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        let mounted = true;
+        loadComponent();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [componentId]);
 
-        const loadComponent = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-
-                const component = await componentRegistry.loadComponent(componentId);
-
-                if (mounted) {
-                    if (typeof component === 'function') {
-                        setLoadedComponent(() => component);
-                    } else {
-                        throw new Error('Invalid component loaded');
-                    }
-                }
-            } catch (err) {
-                if (mounted) {
-                    console.error(`Error loading component ${componentId}:`, err);
-                    setError(err.message);
-                }
-            } finally {
-                if (mounted) {
-                    setIsLoading(false);
-                }
+    useEffect(() => {
+        const handleComponentUpdated = (event) => {
+            const { component_id, code } = event.detail;
+            if (component_id === componentId) {
+                console.log(`Component ${componentId} updated. Reloading...`);
+                loadComponent();
             }
         };
 
-        loadComponent();
-
+        window.addEventListener('componentUpdated', handleComponentUpdated);
         return () => {
-            mounted = false;
+            window.removeEventListener('componentUpdated', handleComponentUpdated);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [componentId]);
 
     if (error) {
         return (
-            <Paper className="p-4 text-center text-red-500">
-                Failed to load component: {error}
-            </Paper>
+            <Box sx={{ padding: '20px', textAlign: 'center' }}>
+                <Typography variant="h5" color="error">
+                    Failed to load component: {error}
+                </Typography>
+            </Box>
         );
     }
 

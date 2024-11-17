@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Container, ThemeProvider } from '@mui/material';
@@ -7,7 +8,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import FloatingActionButton from './components/FloatingActionButton';
 import { componentRegistry } from './core/ComponentRegistry';
-import theme from './theme'; // Import the theme
+import theme from './theme'; // Import the updated theme
 
 function App() {
   const [components, setComponents] = useState([]);
@@ -45,12 +46,31 @@ function App() {
       setCurrentComponentId(null); // Reset editing state after addition
     };
 
+    const handleComponentUpdated = (event) => {
+      const { component_id, code } = event.detail;
+      localStorage.setItem(component_id, code);
+      componentRegistry.clearComponent(component_id); // Clear cache for the updated component
+      setComponents((prevComponents) =>
+        prevComponents.map((comp) =>
+          comp.component_id === component_id ? { ...comp, code } : comp
+        )
+      );
+    };
+
     window.addEventListener('componentAdded', handleComponentAdded);
-    return () => window.removeEventListener('componentAdded', handleComponentAdded);
+    window.addEventListener('componentUpdated', handleComponentUpdated);
+
+    return () => {
+      window.removeEventListener('componentAdded', handleComponentAdded);
+      window.removeEventListener('componentUpdated', handleComponentUpdated);
+    };
   }, []);
 
   const handleEditComponent = (componentId) => {
-    setCurrentComponentId(componentId);
+    const event = new CustomEvent('editComponent', {
+      detail: { component_id: componentId },
+    });
+    window.dispatchEvent(event);
   };
 
   return (
@@ -72,6 +92,7 @@ function App() {
                 />
               }
             />
+            {/* Add more routes here if needed */}
           </Routes>
         </Container>
         <Footer />

@@ -179,7 +179,7 @@ const EmailClient = () => {
           <List>
             {emails.map((email) => (
               <div key={email.id}>
-                <ListItem button onClick={() => handleEmailSelect(email)}>
+                <ListItem onClick={() => handleEmailSelect(email)}>
                   <ListItemIcon>
                     <Badge
                       color="secondary"

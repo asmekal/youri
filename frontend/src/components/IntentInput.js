@@ -1,5 +1,6 @@
-// src/components/IntentInput.js
-import React, { useRef, useEffect } from 'react';
+// frontend/src/components/IntentInput.js
+
+import React from 'react';
 import {
     Paper,
     TextField,
@@ -28,14 +29,6 @@ const IntentInput = ({
     setError,
     editingComponentId,
 }) => {
-    const inputRef = useRef(null);
-
-    useEffect(() => {
-        if (open) {
-            // Focus the input field when the input box opens
-            inputRef.current?.focus();
-        }
-    }, [open]);
 
     return (
         <Grow in={open}>
@@ -50,10 +43,9 @@ const IntentInput = ({
                 }}
             >
                 <Typography variant="subtitle1" sx={{ mb: 1, color: 'text.primary' }}>
-                    {editingComponentId ? 'Edit Widget' : 'Add New Widget'}
+                    {editingComponentId ? 'Update Widget' : 'Add New Widget'}
                 </Typography>
                 <TextField
-                    inputRef={inputRef}
                     label="Express your intent"
                     multiline
                     rows={3}
@@ -162,7 +154,7 @@ IntentInput.propTypes = {
     loading: PropTypes.bool.isRequired,
     handleSubmit: PropTypes.func.isRequired,
     handleKeyPress: PropTypes.func.isRequired,
-    error: PropTypes.string,
+    error: PropTypes.string, // Changed from array/object to string
     setError: PropTypes.func.isRequired,
     editingComponentId: PropTypes.string,
 };

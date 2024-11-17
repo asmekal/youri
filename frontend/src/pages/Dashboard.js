@@ -1,3 +1,4 @@
+// src/pages/Dashboard.js
 import React from 'react';
 import {
     Grid,
@@ -8,6 +9,7 @@ import {
     CircularProgress,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import UpdateIcon from '@mui/icons-material/Update';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DynamicComponent from '../core/DynamicComponent';
 
@@ -75,7 +77,7 @@ const Dashboard = ({
                                     sx={{
                                         p: 2,
                                         minHeight: 150,
-                                        position: 'relative',
+                                        position: 'relative', // Ensures absolute positioning is relative to this Paper
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -84,22 +86,24 @@ const Dashboard = ({
                                         borderColor: 'grey.500',
                                         borderRadius: 2,
                                         backgroundColor: 'background.paper',
+                                        overflow: 'hidden', // Prevents absolute elements from overflowing
                                     }}
                                 >
-                                    {onEdit && (
-                                        <IconButton
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 8,
-                                                right: 8,
-                                            }}
-                                            size="small"
-                                            color="primary"
-                                            onClick={() => onEdit(component.component_id)}
-                                        >
-                                            <EditIcon />
-                                        </IconButton>
-                                    )}
+                                    {/* Edit Button */}
+                                    <IconButton
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8,
+                                            right: 8, // Adjusted to make space for Update button
+                                        }}
+                                        size="small"
+                                        color="primary"
+                                        onClick={() => onEdit(component.component_id)}
+                                    >
+                                        <EditIcon />
+                                    </IconButton>
+
+                                    {/* Dynamic Component */}
                                     <DynamicComponent componentId={component.component_id} />
                                 </Paper>
                             </Grid>

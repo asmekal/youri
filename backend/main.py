@@ -1,12 +1,17 @@
-from fastapi import FastAPI, HTTPException
+# backend/main.py
+
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from models import ComponentRequest, ComponentResponse
+from models import ComponentResponse
 from component_generator import make_ui_component
 from component_store import ComponentStore, DEFAULT_COMPONENTS
 from dotenv import load_dotenv
 import tempfile
 import os
 import base64
+import json
+from typing import Optional, List
+from uuid import uuid4
 
 load_dotenv()
 
@@ -28,47 +33,56 @@ def read_root():
     return {"message": "Backend is running"}
 
 @app.post("/generate_component", response_model=ComponentResponse)
-async def generate_component(request: ComponentRequest):
+async def generate_component(
+    component_id: Optional[str] = Form(None),
+    intent: Optional[str] = Form(None),
+    context: Optional[str] = Form('{}'),  # Default to empty JSON
+    files: Optional[List[UploadFile]] = File(None)
+):
     try:
+        # Parse context JSON string to dictionary
+        try:
+            context_dict = json.loads(context)
+        except json.JSONDecodeError:
+            context_dict = {}
+
         # Handle file contents if provided
         file_paths = []
-        if request.files:
-            for file in request.files:
-                # Create temporary file from base64 content
+        if files:
+            for file in files:
+                # Create temporary file from uploaded file
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as temp_file:
-                    content = base64.b64decode(file.content)
+                    content = await file.read()
                     temp_file.write(content)
                     file_paths.append(temp_file.name)
         
         # If files are provided but no intent, analyze files
-        context_dict = dict(request.context)  # Create mutable copy
-        if file_paths and not request.intent:
+        if file_paths and not intent:
             from parse_files import summarize_all_files
             file_summary = summarize_all_files(file_paths)
-            request.intent = "Create UI component based on uploaded files"
+            intent = "Create UI component based on uploaded files"
             context_dict["file_contents"] = file_summary
         
         # Generate or update component code
-        if request.component_id:
-            component = component_store.get_component(request.component_id)
+        if component_id:
+            component = component_store.get_component(component_id)
             if not component:
                 raise HTTPException(status_code=404, detail="Component not found")
-            component_code = make_ui_component(request.intent, context_dict, component["code"])
-            component_store.update_component(request.component_id, component_code)
-            component_id = request.component_id
+            component_code = make_ui_component(intent, context_dict, component["code"])
+            component_store.update_component(component_id, component_code)
+            # component_id remains the same
         else:
             # Find similar components and add to context
-            similar_components = component_store.find_similar_components(request.intent)
+            similar_components = component_store.find_similar_components(intent)
             if similar_components:
                 context_dict["similar_components"] = similar_components
             
-            component_code = make_ui_component(request.intent, context_dict, None)
-            from uuid import uuid4
+            component_code = make_ui_component(intent, context_dict, None)
             component_id = str(uuid4())
             component_store.add_component({
                 "component_id": component_id,
-                "name": request.intent,
-                "tags": component_store.extract_tags(request.intent),
+                "name": intent,
+                "tags": component_store.extract_tags(intent),
                 "code": component_code,
             })
         
@@ -78,6 +92,9 @@ async def generate_component(request: ComponentRequest):
                 os.unlink(file_path)
             except Exception as e:
                 print(f"Error deleting temporary file {file_path}: {e}")
+
+        print(f"Returning component with id: ${component_id}")
+        print(f"And code:\n${component_code}")
         
         return ComponentResponse(
             component_id=component_id,
@@ -85,6 +102,8 @@ async def generate_component(request: ComponentRequest):
             requires_confirmation=False
         )
         
+    except HTTPException as he:
+        raise he  # Re-raise HTTP exceptions as is
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
