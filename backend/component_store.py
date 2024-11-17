@@ -88,23 +88,14 @@ const EmailClient = () => {
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
 
-  // Fetch emails on component mount
   useEffect(() => {
     fetchEmails();
   }, []);
 
   const fetchEmails = async () => {
     try {
-      const response = await listMessages({
-        userId: 'me',
-        maxResults: 10,
-        labelIds: ['INBOX'],
-      });
-
-      const messagePromises = response.messages.map((msg) =>
-        getMessage({ userId: 'me', id: msg.id, format: 'full' })
-      );
-
+      const response = await listMessages({ userId: 'me', maxResults: 10, labelIds: ['INBOX'] });
+      const messagePromises = response.messages.map((msg) => getMessage({ userId: 'me', id: msg.id, format: 'full' }));
       const messages = await Promise.all(messagePromises);
       setEmails(messages);
     } catch (error) {
@@ -116,20 +107,9 @@ const EmailClient = () => {
     try {
       const fullEmail = await getMessage({ userId: 'me', id: email.id, format: 'full' });
       setSelectedEmail(fullEmail);
-
-      // Mark as read if it's unread
       if (!fullEmail.read) {
-        await modifyMessage({
-          userId: 'me',
-          id: email.id,
-          resource: { removeLabelIds: ['UNREAD'] },
-        });
-        // Update local state
-        setEmails((prevEmails) =>
-          prevEmails.map((e) =>
-            e.id === email.id ? { ...e, read: true } : e
-          )
-        );
+        await modifyMessage({ userId: 'me', id: email.id, resource: { removeLabelIds: ['UNREAD'] } });
+        setEmails((prevEmails) => prevEmails.map((e) => (e.id === email.id ? { ...e, read: true } : e)));
       }
     } catch (error) {
       console.error('Error selecting email:', error);
@@ -156,14 +136,7 @@ const EmailClient = () => {
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 
-      const sentEmail = await sendMessage({
-        userId: 'me',
-        resource: {
-          raw: rawMessage,
-        },
-      });
-
-      // Refresh email list
+      await sendMessage({ userId: 'me', resource: { raw: rawMessage } });
       fetchEmails();
       handleComposeClose();
     } catch (error) {
@@ -171,30 +144,30 @@ const EmailClient = () => {
     }
   };
 
+  const isSmallScreen = window.innerWidth < 600;
+
   return (
-    <div style={{ padding: 20 }}>
-      <Grid container spacing={2}>
-        {/* Email List */}
-        <Grid item xs={4}>
+    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <Grid container spacing={2} style={{ flex: 1, overflow: 'auto' }}>
+        <Grid item xs={12} md={4} style={{ overflow: 'auto' }}>
           <List>
             {emails.map((email) => (
-              <div key={email.id}>
-                <ListItem onClick={() => handleEmailSelect(email)}>
-                  <ListItemIcon>
-                    <Badge
-                      color="secondary"
-                      variant="dot"
-                      invisible={email.read}
-                    >
-                      <MailIcon />
+              <div key={email.id} style={{ fontSize: isSmallScreen ? '0.8rem' : '1rem', wordWrap: 'break-word' }}>
+                <ListItem onClick={() => handleEmailSelect(email)} style={{ alignItems: 'flex-start', maxHeight: '80px' }}>
+                  <ListItemIcon style={{ minWidth: '40px' }}>
+                    <Badge color="secondary" variant="dot" invisible={email.read}>
+                      <MailIcon style={{ fontSize: '24px' }} />
                     </Badge>
                   </ListItemIcon>
                   <ListItemText
                     primary={email.payload.headers.find((h) => h.name === 'Subject')?.value || 'No Subject'}
                     secondary={
-                      `${email.payload.headers.find((h) => h.name === 'From')?.value || 'Unknown Sender'} - ` +
-                      new Date(parseInt(email.internalDate)).toLocaleDateString()
+                      isSmallScreen
+                        ? null
+                        : `${email.payload.headers.find((h) => h.name === 'From')?.value || 'Unknown Sender'} - ` +
+                          new Date(parseInt(email.internalDate)).toLocaleDateString()
                     }
+                    style={{ wordWrap: 'break-word', maxHeight: '60px', overflow: 'hidden' }}
                   />
                 </ListItem>
                 <Divider />
@@ -202,48 +175,46 @@ const EmailClient = () => {
             ))}
           </List>
         </Grid>
-
-        {/* Email Content */}
-        <Grid item xs={8}>
+        <Grid item xs={12} md={8} style={{ overflow: 'auto' }}>
           {selectedEmail ? (
-            <Paper style={{ padding: 20 }}>
-              <Typography variant="h4">
+            <Paper style={{ padding: '1rem', fontSize: isSmallScreen ? '0.9rem' : '1rem', wordWrap: 'break-word' }}>
+              <Typography variant={isSmallScreen ? 'h5' : 'h4'} style={{ wordWrap: 'break-word' }}>
                 {selectedEmail.payload.headers.find((h) => h.name === 'Subject')?.value || 'No Subject'}
               </Typography>
-              <Typography variant="subtitle1" color="textSecondary">
+              <Typography variant="subtitle1" color="textSecondary" style={{ wordWrap: 'break-word' }}>
                 From: {selectedEmail.payload.headers.find((h) => h.name === 'From')?.value || 'Unknown Sender'}
               </Typography>
-              <Typography variant="subtitle1" color="textSecondary">
-                To: {selectedEmail.payload.headers.find((h) => h.name === 'To')?.value || 'Unknown Recipient'}
-              </Typography>
-              <Typography variant="subtitle1" color="textSecondary">
-                Date: {new Date(parseInt(selectedEmail.internalDate)).toLocaleString()}
-              </Typography>
-              <Typography variant="body1" style={{ marginTop: 20 }}>
+              {!isSmallScreen && (
+                <>
+                  <Typography variant="subtitle1" color="textSecondary" style={{ wordWrap: 'break-word' }}>
+                    To: {selectedEmail.payload.headers.find((h) => h.name === 'To')?.value || 'Unknown Recipient'}
+                  </Typography>
+                  <Typography variant="subtitle1" color="textSecondary" style={{ wordWrap: 'break-word' }}>
+                    Date: {new Date(parseInt(selectedEmail.internalDate)).toLocaleString()}
+                  </Typography>
+                </>
+              )}
+              <Typography variant="body1" style={{ marginTop: '1rem', wordWrap: 'break-word' }}>
                 {decodeBase64(selectedEmail.payload.body.data)}
               </Typography>
             </Paper>
           ) : (
-            <Paper style={{ padding: 20 }}>
+            <Paper style={{ padding: '1rem', fontSize: isSmallScreen ? '0.9rem' : '1rem', wordWrap: 'break-word' }}>
               <Typography variant="h6">Select an email to read</Typography>
             </Paper>
           )}
         </Grid>
       </Grid>
-
-      {/* Compose Button */}
       <Fab
         color="primary"
         aria-label="compose"
         onClick={handleComposeOpen}
-        style={{ position: 'fixed', bottom: 20, right: 20 }}
+        style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}
       >
         <AddIcon />
       </Fab>
-
-      {/* Compose Dialog */}
       <Dialog open={isComposeOpen} onClose={handleComposeClose} fullWidth maxWidth="sm">
-        <DialogTitle>New Email</DialogTitle>
+        <DialogTitle style={{ fontSize: isSmallScreen ? '1.2rem' : '1.5rem', wordWrap: 'break-word' }}>New Email</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"
@@ -252,6 +223,7 @@ const EmailClient = () => {
             fullWidth
             value={composeTo}
             onChange={(e) => setComposeTo(e.target.value)}
+            style={{ wordWrap: 'break-word' }}
           />
           <TextField
             margin="dense"
@@ -260,6 +232,7 @@ const EmailClient = () => {
             fullWidth
             value={composeSubject}
             onChange={(e) => setComposeSubject(e.target.value)}
+            style={{ wordWrap: 'break-word' }}
           />
           <TextField
             margin="dense"
@@ -270,6 +243,7 @@ const EmailClient = () => {
             rows={4}
             value={composeBody}
             onChange={(e) => setComposeBody(e.target.value)}
+            style={{ wordWrap: 'break-word' }}
           />
         </DialogContent>
         <DialogActions>
@@ -283,7 +257,7 @@ const EmailClient = () => {
       </Dialog>
     </div>
   );
-}
+};
 
 export default EmailClient;
 """,
