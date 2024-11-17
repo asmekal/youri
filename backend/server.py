@@ -131,4 +131,51 @@ def make_ui_component(user_text, local_file_paths=None, component_name="Generate
 # make_ui_component(user_text)
 # user_file_attached = "../test_data/blood_report.pdf"
 # make_ui_component(user_text="", local_file_paths=[user_file_attached])
-make_ui_component(user_text="make note taking app with local storage", component_name="NotetakingApp")
+# make_ui_component(user_text="make note taking app with local storage", component_name="NotetakingApp")
+webapp_pairs = [
+    ("Build a weather dashboard using a public weather API", "WeatherDashboard"),
+    ("Create a to-do list app with task categorization", "TodoListApp"),
+    ("Design a real-time currency converter with exchange rate updates", "CurrencyConverterApp")
+]
+webapp_pairs = [
+    ("Create a simple photo editor with basic filters and adjustments", "PhotoEditor"),
+    ("Design a digital clock with customizable themes", "DigitalClock"),
+    ("Build a color palette generator for UI/UX designers", "ColorPaletteGenerator"),
+    ("Develop a random quote generator with a background image API", "QuoteGenerator"),
+    ("Create an interactive quiz app with multiple-choice questions", "QuizApp"),
+    ("Build a countdown timer with alarm notifications", "CountdownTimer"),
+    ("Develop a BMI calculator with visual feedback", "BMICalculator"),
+    ("Create a unit converter for common measurements", "UnitConverter"),
+    ("Design a habit tracker with a simple visualization chart", "HabitTracker"),
+    ("Build a weather forecast widget with icons for each condition", "WeatherWidget"),
+    ("Develop a live news feed reader using an RSS API", "NewsFeedReader"),
+    ("Create a pixel drawing board for simple art creations", "PixelArtBoard"),
+    ("Build a simple music player with audio visualization", "MusicPlayer"),
+    ("Design a tip calculator with split bill options", "TipCalculator"),
+    ("Develop a Pomodoro timer with visual session indicators", "PomodoroTimer"),
+    ("Create a financial budget tracker with summary charts", "BudgetTracker"),
+    ("Build a basic animation creator with draggable shapes", "AnimationCreator"),
+    ("Develop a stopwatch app with lap functionality", "StopwatchApp"),
+    ("Create an interactive periodic table with element details", "InteractivePeriodicTable"),
+    ("Design a food recipe search tool with ingredient filtering", "RecipeSearchTool"),
+    ("Build a markdown editor with live preview", "MarkdownEditor"),
+    ("Develop a visual encryption/decryption tool for simple ciphers", "CipherTool"),
+    ("Create a book recommendation app with visual book covers", "BookRecommendationApp"),
+    ("Build a CSS box shadow generator with preview", "BoxShadowGenerator"),
+    ("Design a random name picker for games or raffles", "RandomNamePicker"),
+    ("Develop a simple memory card matching game", "MemoryCardGame"),
+    ("Create a photo slideshow app with transition effects", "PhotoSlideshow"),
+    ("Build a customizable calendar with task labels", "CustomCalendar"),
+    ("Develop a word cloud generator from user-provided text", "WordCloudGenerator"),
+    ("Create an interactive map tool to add markers and notes", "InteractiveMap")
+]
+
+n_failed = 0
+for instruction, component in webapp_pairs:
+    try:
+        make_ui_component(user_text=instruction, component_name=component)
+    except:
+        print('COMPONENT FAILED TO GENERATE!', instruction, component)
+        n_failed += 1
+print('total failed', n_failed)
+
