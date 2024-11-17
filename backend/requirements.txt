@@ -4,3 +4,4 @@ pydantic
 groq
 fastapi
 uvicorn
+google-generativeai

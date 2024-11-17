@@ -1,6 +1,8 @@
 from pydantic import BaseModel
+import os
 
 from api import llm_reply
+from gemini import summarize_all_files, repeat_until_success
 
 class UserIntentModel(BaseModel):
     user_intent: str
@@ -35,7 +37,12 @@ highly visual (minimal text), neatly-looking UI component which will be rendered
 user directly to interact with.
 """.strip()
 
-def make_ui_component(user_text):
+def make_ui_component(user_text, local_file_paths=None):
+    if local_file_paths is not None:
+        assert isinstance(local_file_paths, (list, tuple))
+        for fn in local_file_paths:
+            assert os.path.exists(fn)
+        user_text += "# Attached files\n\n" + summarize_all_files(local_file_paths)
     # Step 1: Analyze user_text to guess user intent
     prompt_1 = f"""
     Analyse the following user input and return the user's intent as a specific, well-defined string.
@@ -48,7 +55,9 @@ def make_ui_component(user_text):
     Reply in proper json of the following format:
     {{'user_intent': ...}}
     """
-    user_intent = llm_reply(prompt_1, system_prompt=system_prompt, response_format=UserIntentModel)
+    def get_reply1():
+        return llm_reply(prompt_1, system_prompt=system_prompt, response_format=UserIntentModel)
+    user_intent = repeat_until_success(get_reply1, max_retries=3)
     # user_intent = UserIntentModel.parse_raw(user_intent_response)
     print(f"User Intent:\n{user_intent}")
 
@@ -64,7 +73,9 @@ def make_ui_component(user_text):
         'how_to_render_instruction': ...
     }}
     """
-    render_info = llm_reply(prompt_2, system_prompt=system_prompt, response_format=RenderInfoModel)
+    def get_reply2():
+        return llm_reply(prompt_2, system_prompt=system_prompt, response_format=RenderInfoModel)
+    render_info = repeat_until_success(get_reply2, max_retries=3)
     # render_info = RenderInfoModel.parse_raw(render_info_response)
     print(f"Render Info:\n{render_info}")
 
@@ -76,14 +87,19 @@ def make_ui_component(user_text):
 
     Return the code enclosed within: ```...``` (triple code quotes block). The name of component must be GeneratedComponent.
     """
-    ui_component_code = llm_reply(prompt_3, system_prompt=system_prompt)
-    # ui_component_code = ui_component_code_response.strip("```")
-    print(f"UI Component Code:\n{ui_component_code}")
-    ui_component_code = extract_code_block(ui_component_code)
+    def get_reply3():
+        ui_component_code = llm_reply(prompt_3, system_prompt=system_prompt)
+        # ui_component_code = ui_component_code_response.strip("```")
+        print(f"UI Component Code:\n{ui_component_code}")
+        ui_component_code = extract_code_block(ui_component_code)
+        return ui_component_code
+    ui_component_code = repeat_until_success(get_reply3, max_retries=5)
     print('SUCCESS')
-    with open('frontent-mock/src/GeneratedComponent.js', 'w') as f:
+    with open('../frontent-mock/src/GeneratedComponent.js', 'w') as f:
         f.write(ui_component_code)
 
 # Example usage
-user_text = "snake game"
-make_ui_component(user_text)
+# user_text = "snake game"
+# make_ui_component(user_text)
+user_file_attached = "../test_data/blood_report.pdf"
+make_ui_component(user_text="", local_file_paths=[user_file_attached])
