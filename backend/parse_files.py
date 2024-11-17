@@ -26,11 +26,11 @@ def generate_response_gemini_multimodal(prompt: list, model="gemini-1.5-flash", 
         generation_config = genai.GenerationConfig(max_output_tokens=max_tokens)
     safety_setting = None
     safety_setting = {
-        genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-        genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-        genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
-        genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
-        # genai.types.HarmCategory.HARM_CATEGORY_UNSPECIFIED: genai.types.HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        # HarmCategory.HARM_CATEGORY_UNSPECIFIED: HarmBlockThreshold.BLOCK_NONE,
     }
     response = model.generate_content(prompt, generation_config=generation_config, safety_settings=safety_setting)  # TODO: safety check & filters
     return response.text
@@ -76,7 +76,7 @@ def get_fixed_str(input_str, start='{', end='}'):
         return input_str[start:end]
     except ValueError as e:
         raise e
-    
+
 def parse_in_between(text, start="## Upload 1", end="# End of report"):
     # Check if start and end markers occur more than once
     if text.count(start) != 1 or text.count(end) != 1:

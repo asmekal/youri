@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Paper, Typography } from '@mui/material';
 import * as Babel from '@babel/standalone';
+import ErrorBoundary from './ErrorBoundary';
 
 const DynamicComponentLoader = ({ componentId }) => {
     const [Component, setComponent] = useState(null);
@@ -9,7 +10,7 @@ const DynamicComponentLoader = ({ componentId }) => {
         const loadComponent = () => {
             const code = localStorage.getItem(componentId);
             console.log(`Loading component with ID: ${componentId}`);
-            console.log(`Component code:\n${code}`);
+            console.log(`Component code: ${code}`);
 
             if (code) {
                 try {
@@ -18,7 +19,7 @@ const DynamicComponentLoader = ({ componentId }) => {
                         presets: ['env', 'react'],
                     }).code;
 
-                    console.log(`Transpiled code:\n${transpiledCode}`);
+                    console.log(`Transpiled code: ${transpiledCode}`);
 
                     // Create a new function with React, Paper, Typography as parameters
                     const componentFunc = new Function('React', 'Paper', 'Typography', 'module', 'exports', transpiledCode);
