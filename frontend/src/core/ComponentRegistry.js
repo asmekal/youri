@@ -1,9 +1,14 @@
 import * as Babel from '@babel/standalone';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Grid, Paper, IconButton, Typography, Box,
     Fab, TextField, CircularProgress, Snackbar, Grow,
+    List, ListItem, ListItemText, ListItemIcon, Badge, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Button,
+    Card, CardContent,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import MailIcon from '@mui/icons-material/Mail';
+import { listMessages, getMessage, sendMessage, modifyMessage, decodeBase64 } from '../interfaces/emailMocked';
 
 class ComponentRegistry {
     static instance = null;
@@ -41,10 +46,13 @@ class ComponentRegistry {
                 CircularProgress,
                 Snackbar,
                 Grow,
+                List, ListItem, ListItemText, ListItemIcon, Badge, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Button,
+                Card, CardContent,
+                AddIcon, MailIcon,
             };
 
             // Transform the code
-            const transpiledCode = await Babel.transform(code, {
+            const transpiledCode = Babel.transform(code, {
                 presets: ['env', 'react'],
                 filename: `component-${componentId}.js`,
             }).code;
@@ -73,6 +81,8 @@ class ComponentRegistry {
                 'require',
                 'exports',
                 'module',
+                'useState', 'useEffect',
+                'listMessages', 'getMessage', 'sendMessage', 'modifyMessage', 'decodeBase64',
                 ...Object.keys(dependencies),
                 wrappedCode
             );
@@ -82,6 +92,8 @@ class ComponentRegistry {
                 moduleRequire,
                 moduleExports,
                 { exports: moduleExports },
+                useState, useEffect, // Passed useState and useEffect correctly
+                listMessages, getMessage, sendMessage, modifyMessage, decodeBase64,
                 ...Object.values(dependencies)
             );
 

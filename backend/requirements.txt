@@ -5,3 +5,4 @@ groq
 fastapi
 uvicorn
 google-generativeai
+openai
