@@ -2,4 +2,6 @@ python-dotenv
 instructor
 pydantic
 groq
+fastapi
+uvicorn
 google-generativeai
