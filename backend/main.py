@@ -29,6 +29,7 @@ def read_root():
 
 @app.post("/generate_component", response_model=ComponentResponse)
 async def generate_component(request: ComponentRequest):
+    print('received request!')
     try:
         # Handle file contents if provided
         file_paths = []
@@ -78,7 +79,7 @@ async def generate_component(request: ComponentRequest):
                 os.unlink(file_path)
             except Exception as e:
                 print(f"Error deleting temporary file {file_path}: {e}")
-        
+        print(f'response generated: {component_id}\n\n{component_code}')
         return ComponentResponse(
             component_id=component_id,
             code=component_code,
