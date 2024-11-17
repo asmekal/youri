@@ -1,18 +1,17 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { CssBaseline, Container } from '@mui/material';
+import { CssBaseline, Container, ThemeProvider } from '@mui/material';
 import axios from 'axios';
 import Dashboard from './pages/Dashboard';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import FloatingActionButton from './components/FloatingActionButton';
 import { componentRegistry } from './core/ComponentRegistry';
+import theme from './theme'; // Import the theme
 
 function App() {
   const [components, setComponents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [currentComponentId, setCurrentComponentId] = useState(null);
 
   const fetchComponents = async () => {
@@ -43,6 +42,7 @@ function App() {
 
     const handleComponentAdded = () => {
       fetchComponents();
+      setCurrentComponentId(null); // Reset editing state after addition
     };
 
     window.addEventListener('componentAdded', handleComponentAdded);
@@ -51,33 +51,33 @@ function App() {
 
   const handleEditComponent = (componentId) => {
     setCurrentComponentId(componentId);
-    setEditModalOpen(true);
   };
 
   return (
-    <Router>
-      <CssBaseline />
-      <Header />
-      <Container className="py-5">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard
-                components={components}
-                isLoading={isLoading}
-                onEdit={handleEditComponent}
-                title="My Custom Dashboard"
-                columns={{ xs: 12, sm: 6, lg: 3 }}
-                spacing={4}
-              />
-            }
-          />
-        </Routes>
-      </Container>
-      <Footer />
-      <FloatingActionButton />
-    </Router>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <CssBaseline />
+        <Header />
+        <Container sx={{ py: 5 }}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Dashboard
+                  components={components}
+                  isLoading={isLoading}
+                  onEdit={handleEditComponent}
+                  columns={{ xs: 12, sm: 6, lg: 3 }}
+                  spacing={4}
+                />
+              }
+            />
+          </Routes>
+        </Container>
+        <Footer />
+        <FloatingActionButton editingComponentId={currentComponentId} />
+      </Router>
+    </ThemeProvider>
   );
 }
 

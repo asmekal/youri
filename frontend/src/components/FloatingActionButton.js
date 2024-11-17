@@ -1,28 +1,37 @@
-import React, { useState, useRef } from 'react';
-import {
-    Fab,
-    TextField,
-    Paper,
-    IconButton,
-    CircularProgress,
-    Snackbar,
-    Grow,
-    Box
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import SendIcon from '@mui/icons-material/Send';
-import MicIcon from '@mui/icons-material/Mic';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import CloseIcon from '@mui/icons-material/Close';
+import React, { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
+import ActionButton from './ActionButton';
+import IntentInput from './IntentInput';
 import axios from 'axios';
 
-const FloatingActionButton = () => {
+const FloatingActionButton = ({ editingComponentId }) => {
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState('');
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const inputRef = useRef(null);
+    const [error, setError] = useState(''); // Initialize error state
+
+    useEffect(() => {
+        if (editingComponentId) {
+            // Fetch existing component data to pre-fill the input
+            const fetchComponentData = async () => {
+                try {
+                    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+                    const response = await axios.get(`${backendUrl}/get_component/${editingComponentId}`);
+                    const { intent, files: existingFiles } = response.data;
+
+                    setInput(intent || '');
+                    setFiles(existingFiles || []);
+                    setOpen(true);
+                } catch (error) {
+                    console.error('Error fetching component data:', error);
+                    setError('Failed to load component data for editing');
+                }
+            };
+
+            fetchComponentData();
+        }
+    }, [editingComponentId]);
 
     const handleSubmit = async () => {
         if (!input && files.length === 0) {
@@ -37,24 +46,28 @@ const FloatingActionButton = () => {
                 files.map(async (file) => {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
-                        reader.onload = () => resolve({
-                            filename: file.name,
-                            content: reader.result.split(',')[1]
-                        });
+                        reader.onload = () =>
+                            resolve({
+                                filename: file.name,
+                                content: reader.result.split(',')[1],
+                            });
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
                 })
             );
 
-            const response = await axios.post(
-                `${backendUrl}/generate_component`,
-                {
-                    intent: input || undefined,
-                    files: fileContents,
-                    context: {}
-                }
-            );
+            const payload = {
+                intent: input || undefined,
+                files: fileContents,
+                context: {},
+            };
+
+            let response;
+            if (editingComponentId) {
+                payload["componentId"] = editingComponentId
+            }
+            response = await axios.post(`${backendUrl}/generate_component`, payload);
 
             const { component_id, code } = response.data;
             localStorage.setItem(component_id, code);
@@ -63,10 +76,15 @@ const FloatingActionButton = () => {
             setFiles([]);
             setOpen(false);
 
-            // Use context or Redux instead of a global event
-            window.dispatchEvent(new CustomEvent('componentAdded', {
-                detail: { component_id, code }
-            }));
+            // Dispatch event to notify component addition or update
+            window.dispatchEvent(
+                new CustomEvent('componentAdded', {
+                    detail: { component_id, code },
+                })
+            );
+
+            // Reset error after successful submission
+            setError('');
         } catch (error) {
             console.error('Error sending request:', error);
             setError(error.response?.data?.detail || 'Failed to generate component');
@@ -85,104 +103,39 @@ const FloatingActionButton = () => {
     const toggleOpen = () => {
         setOpen(!open);
         if (!open) {
-            // Focus input when opening
-            setTimeout(() => inputRef.current?.focus(), 100);
+            // Reset fields when opening for new component
+            setInput('');
+            setFiles([]);
+            setError('');
         }
     };
 
     return (
-        <>
-            <Box sx={{
+        <Box
+            sx={{
                 position: 'fixed',
                 right: 24,
                 bottom: 24,
                 display: 'flex',
                 alignItems: 'flex-end',
-                gap: 2
-            }}>
-                <Grow in={open}>
-                    <Paper
-                        elevation={3}
-                        sx={{
-                            p: 2,
-                            width: 320,
-                            mb: 1
-                        }}
-                    >
-                        <TextField
-                            inputRef={inputRef}
-                            label="Express your intent"
-                            multiline
-                            rows={3}
-                            variant="outlined"
-                            fullWidth
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            disabled={loading}
-                        />
-                        <Box sx={{
-                            mt: 2,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <Box>
-                                <IconButton
-                                    color="primary"
-                                    component="label"
-                                    disabled={loading}
-                                >
-                                    <AttachFileIcon />
-                                    <input
-                                        type="file"
-                                        hidden
-                                        multiple
-                                        onChange={(e) => setFiles(Array.from(e.target.files))}
-                                        accept=".js,.jsx,.ts,.tsx,.css,.html,.json,.md"
-                                    />
-                                </IconButton>
-                                <IconButton
-                                    color="primary"
-                                    disabled={loading}
-                                >
-                                    <MicIcon />
-                                </IconButton>
-                            </Box>
-                            <IconButton
-                                color="primary"
-                                onClick={handleSubmit}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <CircularProgress size={24} />
-                                ) : (
-                                    <SendIcon />
-                                )}
-                            </IconButton>
-                        </Box>
-                        {files.length > 0 && (
-                            <Box sx={{ mt: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
-                                Selected files: {files.map(f => f.name).join(', ')}
-                            </Box>
-                        )}
-                    </Paper>
-                </Grow>
-                <Fab
-                    color={open ? 'secondary' : 'primary'}
-                    onClick={toggleOpen}
-                    sx={{ mb: 1 }}
-                >
-                    {open ? <CloseIcon /> : <AddIcon />}
-                </Fab>
-            </Box>
-            <Snackbar
-                open={!!error}
-                autoHideDuration={6000}
-                onClose={() => setError('')}
-                message={error}
+                gap: 2,
+            }}
+        >
+            <IntentInput
+                open={open}
+                input={input}
+                setInput={setInput}
+                files={files}
+                setFiles={setFiles}
+                loading={loading}
+                handleSubmit={handleSubmit}
+                handleKeyPress={handleKeyPress}
+                error={error}          // Pass the error state
+                setError={setError}
+                editingComponentId={editingComponentId}
             />
-        </>
+            <ActionButton open={open} onToggle={toggleOpen} />
+        </Box>
     );
 };
 

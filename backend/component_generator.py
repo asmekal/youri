@@ -1,9 +1,22 @@
 from typing import Optional
-from openai import OpenAI
 import os
+from dotenv import load_dotenv
+from openai import OpenAI, OpenAIError
+
+# Load environment variables
+load_dotenv()
+
+# Initialize OpenAI client with the correct API key
+api_key = os.getenv('OPENAI_API_KEY')
+if not api_key:
+    raise OpenAIError("OPENAI_API_KEY environment variable not set.")
+
+client = OpenAI(
+    api_key=api_key,
+)
 
 prompt_base = """
-You  are an expert React JS engineer.
+You are an expert React JS engineer.
 You can implement and update React components satisfying any needs of the user.
 
 You must only use Material UI for visual components.
@@ -88,7 +101,7 @@ The updated component should visually stay the same with the only exception bein
 """
 
 client = OpenAI(
-    api_key=os.getenv('OPENAI_API_KEY'),
+    api_key=os.environ.get('OPENAI_API_KEY'),
 )
 
 def make_ui_component(intent: str, context: dict, component_code: Optional[str]) -> str:

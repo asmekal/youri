@@ -1,5 +1,12 @@
 import React from 'react';
-import { Grid, Paper, IconButton, Typography, Box, CircularProgress } from '@mui/material';
+import {
+    Grid,
+    Paper,
+    IconButton,
+    Typography,
+    Box,
+    CircularProgress,
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DynamicComponent from '../core/DynamicComponent';
@@ -7,16 +14,16 @@ import DynamicComponent from '../core/DynamicComponent';
 const EmptyState = () => (
     <Paper
         elevation={0}
-        className="p-8 text-center bg-gray-50"
         sx={{
+            p: 8,
+            textAlign: 'center',
+            backgroundColor: 'background.paper',
             border: '2px dashed',
-            borderColor: 'grey.300',
-            borderRadius: 2
+            borderColor: 'grey.500',
+            borderRadius: 2,
         }}
     >
-        <AddCircleOutlineIcon
-            sx={{ fontSize: 48, color: 'grey.400', mb: 2 }}
-        />
+        <AddCircleOutlineIcon sx={{ fontSize: 48, color: 'grey.500', mb: 2 }} />
         <Typography variant="h6" color="textSecondary" gutterBottom>
             No Widgets Yet
         </Typography>
@@ -36,9 +43,8 @@ const Dashboard = ({
     components = [], // Provide default empty array
     isLoading = false,
     onEdit,
-    title = "Welcome to Your Dashboard",
     columns = { xs: 12, sm: 6, md: 4 },
-    spacing = 3
+    spacing = 3,
 }) => {
     // Early return for loading state
     if (isLoading) {
@@ -50,14 +56,6 @@ const Dashboard = ({
 
     return (
         <Box>
-            {title && (
-                <Typography
-                    variant="h4"
-                    sx={{ mb: 4, fontWeight: 'medium' }}
-                >
-                    {title}
-                </Typography>
-            )}
             {/* Check for empty array using safeComponents */}
             {safeComponents.length === 0 ? (
                 <EmptyState />
@@ -80,7 +78,12 @@ const Dashboard = ({
                                         position: 'relative',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        boxShadow: 'none',
+                                        border: '1px solid',
+                                        borderColor: 'grey.500',
+                                        borderRadius: 2,
+                                        backgroundColor: 'background.paper',
                                     }}
                                 >
                                     {onEdit && (
@@ -88,7 +91,7 @@ const Dashboard = ({
                                             sx={{
                                                 position: 'absolute',
                                                 top: 8,
-                                                right: 8
+                                                right: 8,
                                             }}
                                             size="small"
                                             color="primary"

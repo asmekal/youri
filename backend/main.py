@@ -3,9 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import ComponentRequest, ComponentResponse
 from component_generator import make_ui_component
 from component_store import ComponentStore, DEFAULT_COMPONENTS
+from dotenv import load_dotenv
 import tempfile
 import os
 import base64
+
+load_dotenv()
 
 app = FastAPI()
 component_store = ComponentStore()

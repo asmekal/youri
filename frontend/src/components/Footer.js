@@ -3,9 +3,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { makeStyles } from '@mui/styles';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
     footer: {
-        backgroundColor: '#f1f1f1',
+        backgroundColor: theme.palette.background.paper,
         textAlign: 'center',
         padding: '10px 0',
         position: 'fixed',
@@ -13,7 +13,7 @@ const useStyles = makeStyles({
         bottom: 0,
         width: '100%',
     },
-});
+}));
 
 const Footer = () => {
     const classes = useStyles();
