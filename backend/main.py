@@ -8,7 +8,6 @@ from component_store import ComponentStore, DEFAULT_COMPONENTS
 from dotenv import load_dotenv
 import tempfile
 import os
-import base64
 import json
 from typing import Optional, List
 from uuid import uuid4

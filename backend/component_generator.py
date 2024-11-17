@@ -1,19 +1,6 @@
 from typing import Optional
-import os
-from dotenv import load_dotenv
-from openai import OpenAI, OpenAIError
-
-# Load environment variables
-load_dotenv()
-
-# Initialize OpenAI client with the correct API key
-api_key = os.getenv('OPENAI_API_KEY')
-if not api_key:
-    raise OpenAIError("OPENAI_API_KEY environment variable not set.")
-
-client = OpenAI(
-    api_key=api_key,
-)
+from groq_api import llm_reply
+from parse_files import repeat_until_success
 
 prompt_base = """
 You are an expert React JS engineer.
@@ -83,7 +70,13 @@ Here's what user request is:
 [USER_INTENT]
 ```
 
+Some additional context;
+```
+[EXTRA_CONTEXT]
+```
+
 You must only return the code of the component with very few comments and without any imports.
+Last line must be "export default ...;"
 """
 
 prompt_part_component_exists = """
@@ -98,23 +91,34 @@ You should update to satisfy users request.
 You shouldn't use any APIs other than internal.
 You shouldn't update the internal APIs or the way they are used.
 The updated component should visually stay the same with the only exception being user requested changes.
+
+Return the code enclosed within: ```...``` (triple code quotes block).
 """
 
-client = OpenAI(
-    api_key=os.environ.get('OPENAI_API_KEY'),
-)
+def extract_code_block(text):
+    # Split the input text using the code block delimiter
+    code_blocks = text.split('```')
+    
+    # Check if there are exactly 3 parts (before, code block, after)
+    if len(code_blocks) != 3:
+        raise ValueError("Input text must contain exactly one code block enclosed by triple backticks.")
+    
+    # Extract the code block content
+    language_and_code = code_blocks[1].split('\n', 1)
+    
+    # Ensure there's a language identifier followed by code
+    if len(language_and_code) != 2 or not language_and_code[0]:
+        raise ValueError("The code block must start with a language identifier followed by code.")
+    
+    # Return the actual code part
+    return language_and_code[1].strip()
 
 def make_ui_component(intent: str, context: dict, component_code: Optional[str]) -> str:
-    prompt = prompt_base.replace("[USER_INTENT]", intent)
+    prompt = prompt_base.replace("[USER_INTENT]", intent).replace("[EXTRA_CONTEXT]", str(context))
     if component_code:
         prompt += prompt_part_component_exists.replace("[EXISTING_COMPONENT_CODE]", component_code)
-    chat_completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "user",
-                "content": "Say this is a test",
-            }
-        ],
-    )
-    return chat_completion.choices[0].message.content
+    def get_proper_code():
+        result0 = llm_reply(prompt, model='llama-3.1-70b-versatile')
+        result = extract_code_block(result0)
+        return result
+    return repeat_until_success(get_proper_code, max_retries=5)
